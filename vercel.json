@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "name": "zivio-living-api",
+  "builds": [
+    {
+      "src": "index.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "index.ts"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
