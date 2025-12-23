@@ -91,8 +91,8 @@ app.use('/api', apiRoutes);
 // Error handler
 app.use(errorHandler);
 
-// In production, serve the built client files
-if (config.nodeEnv === 'production') {
+// In production, serve the built client files (but not on Vercel where this is API-only)
+if (config.nodeEnv === 'production' && process.env.VERCEL !== '1') {
   serveStatic(app);
 }
 
