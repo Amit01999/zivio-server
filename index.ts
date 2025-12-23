@@ -6,6 +6,7 @@ import apiRoutes from './routes/index.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { serveStatic } from './static.js';
 import { config } from './config/environment.js';
+import cors from 'cors';
 
 const app = express();
 const httpServer = createServer(app);
@@ -74,6 +75,31 @@ async function initializeDatabase() {
   }
 }
 
+// Cours
+const allowedOrigins = [
+  'https://zivio-client.vercel.app/', // Your Vercel client URL
+  'https://zivio-client-git-main-bepros-projects.vercel.app/', // Custom domain if any
+  'http://localhost:5173', // Local development
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
+
 // Middleware to ensure database is connected before handling requests
 app.use(async (_req, res, next) => {
   try {
@@ -105,7 +131,9 @@ if (process.env.VERCEL !== '1' && config.nodeEnv === 'development') {
     await initializeDatabase();
     httpServer.listen(config.port, config.host, () => {
       log(`serving on ${config.host}:${config.port}`);
-      log('Running in development mode - client should be started separately with: cd client && npx vite');
+      log(
+        'Running in development mode - client should be started separately with: cd client && npx vite'
+      );
     });
   })();
 }
