@@ -5,8 +5,8 @@ import {
   getInquiryDetails,
   updateInquiryStatus,
   getListingInquiries
-} from '../controllers/propertyInquiry.controller';
-import { authMiddleware } from '../middleware/auth.middleware';
+} from '../controllers/propertyInquiry.controller.js';
+import { authMiddleware } from '../middleware/auth.middleware.js';
 
 const router = Router();
 

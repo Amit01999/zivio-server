@@ -21,7 +21,7 @@ import type {
   ListingWithBroker,
   Conversation,
   ConversationWithDetails
-} from './types/schema';
+} from './types/schema.js';
 
 export interface IStorage {
   // User methods

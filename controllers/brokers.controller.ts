@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { storage } from '../services/storage.service';
-import { asyncHandler } from '../utils/asyncHandler';
+import { storage } from '../services/storage.service.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 export const getBrokers = asyncHandler(async (req: Request, res: Response) => {
   const verified = req.query.verified === 'true' ? true : undefined;

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import multer from 'multer';
-import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinaryUpload';
-import { AuthRequest } from '../middleware/auth.middleware';
+import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinaryUpload.js';
+import { AuthRequest } from '../middleware/auth.middleware.js';
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage();

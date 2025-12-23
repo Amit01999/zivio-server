@@ -1,7 +1,7 @@
 import { Response } from 'express';
-import { storage } from '../services/storage.service';
-import { AuthRequest } from '../middleware/auth.middleware';
-import { asyncHandler } from '../utils/asyncHandler';
+import { storage } from '../services/storage.service.js';
+import { AuthRequest } from '../middleware/auth.middleware.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 export const getStats = asyncHandler(async (req: AuthRequest, res: Response) => {
   const stats = await storage.getStats();

@@ -4,8 +4,8 @@ import {
   addToCart,
   removeFromCart,
   clearCart
-} from '../controllers/comparisonCart.controller';
-import { authMiddleware } from '../middleware/auth.middleware';
+} from '../controllers/comparisonCart.controller.js';
+import { authMiddleware } from '../middleware/auth.middleware.js';
 
 const router = Router();
 

@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { config } from './environment';
+import { config } from './environment.js';
 import { randomUUID } from 'crypto';
 
 export async function connectDatabase() {
@@ -17,7 +17,7 @@ export async function connectDatabase() {
 }
 
 async function seedDatabase() {
-  const { UserModel, BrokerModel, ListingModel } = await import('../models');
+  const { UserModel, BrokerModel, ListingModel } = await import('../models/index.js');
 
   const adminExists = await UserModel.findOne({ role: 'admin' });
 
@@ -25,8 +25,8 @@ async function seedDatabase() {
     console.log('🌱 Seeding database with initial data...');
 
     // Import password utility
-    const { hashPassword } = await import('../utils/password');
-    const { generateSlug } = await import('../utils/slugify');
+    const { hashPassword } = await import('../utils/password.js');
+    const { generateSlug } = await import('../utils/slugify.js');
 
     // Create admin user
     const admin = await UserModel.create({

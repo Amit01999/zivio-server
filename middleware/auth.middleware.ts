@@ -1,8 +1,8 @@
 import jwt, { type SignOptions } from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
-import { config } from '../config/environment';
-import { storage } from '../services/storage.service';
-import type { SafeUser, UserRole } from '../types/schema';
+import { config } from '../config/environment.js';
+import { storage } from '../services/storage.service.js';
+import type { SafeUser, UserRole } from '../types/schema.js';
 
 export interface AuthRequest extends Request {
   userId?: string;

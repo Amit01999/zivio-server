@@ -1,5 +1,5 @@
 import { type Request, type Response } from 'express';
-import { storage } from '../services/storage.service';
+import { storage } from '../services/storage.service.js';
 import { type SearchFilters } from '../types/schema.js';
 
 export async function getListingsHandler(req: any, res: Response) {

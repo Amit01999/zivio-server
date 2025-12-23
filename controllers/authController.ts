@@ -1,6 +1,6 @@
 import { type Request, type Response } from 'express';
 import { z } from 'zod';
-import { storage } from '../services/storage.service';
+import { storage } from '../services/storage.service.js';
 import { registerSchema, loginSchema } from '../types/schema.js';
 
 export async function registerHandler(req: Request, res: Response) {

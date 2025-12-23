@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { AuthRequest } from './auth.middleware';
+import { AuthRequest } from './auth.middleware.js';
 
 export async function adminMiddleware(
   req: AuthRequest,
@@ -7,7 +7,7 @@ export async function adminMiddleware(
   next: NextFunction
 ) {
   try {
-    const { UserModel } = await import('../models');
+    const { UserModel } = await import('../models/index.js');
     const user = await UserModel.findById(req.userId);
 
     if (!user || user.role !== 'admin') {

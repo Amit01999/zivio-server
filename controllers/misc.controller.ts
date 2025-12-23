@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { contactFormSchema, insertViewingRequestSchema } from '../types/schema.js';
-import { storage } from '../services/storage.service';
-import { AuthRequest } from '../middleware/auth.middleware';
-import { asyncHandler } from '../utils/asyncHandler';
+import { storage } from '../services/storage.service.js';
+import { AuthRequest } from '../middleware/auth.middleware.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 export const contactFormHandler = asyncHandler(async (req: Request, res: Response) => {
   const data = contactFormSchema.parse(req.body);

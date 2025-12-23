@@ -1,5 +1,5 @@
 import { type Request, type Response } from 'express';
-import { storage } from '../services/storage.service';
+import { storage } from '../services/storage.service.js';
 
 export async function getStatsHandler(req: any, res: Response) {
   try {

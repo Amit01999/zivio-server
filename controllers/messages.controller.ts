@@ -1,8 +1,8 @@
 import { Response } from 'express';
 import { insertMessageSchema } from '../types/schema.js';
-import { storage } from '../services/storage.service';
-import { AuthRequest } from '../middleware/auth.middleware';
-import { asyncHandler } from '../utils/asyncHandler';
+import { storage } from '../services/storage.service.js';
+import { AuthRequest } from '../middleware/auth.middleware.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 export const getConversations = asyncHandler(async (req: AuthRequest, res: Response) => {
   const conversations = await storage.getConversations(req.userId!);

@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { registerSchema, loginSchema } from '../types/schema.js';
-import { storage } from '../services/storage.service';
-import { generateToken, AuthRequest } from '../middleware/auth.middleware';
-import { asyncHandler } from '../utils/asyncHandler';
-import { config } from '../config/environment';
+import { storage } from '../services/storage.service.js';
+import { generateToken, AuthRequest } from '../middleware/auth.middleware.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { config } from '../config/environment.js';
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
   const data = registerSchema.parse(req.body);

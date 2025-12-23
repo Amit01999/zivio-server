@@ -1,18 +1,18 @@
 import { Router } from 'express';
-import authRoutes from './auth.routes';
-import listingsRoutes from './listings.routes';
-import brokersRoutes from './brokers.routes';
-import favoritesRoutes from './favorites.routes';
-import messagesRoutes from './messages.routes';
-import reviewsRoutes from './reviews.routes';
-import adminRoutes from './admin.routes';
-import paymentsRoutes from './payments.routes';
-import propertyInquiryRoutes from './propertyInquiry.routes';
-import comparisonCartRoutes from './comparisonCart.routes';
-import dashboardRoutes from './dashboard.routes';
-import uploadRoutes from './upload.routes';
-import { contactFormHandler, createViewingRequest } from '../controllers/misc.controller';
-import { authMiddleware } from '../middleware/auth.middleware';
+import authRoutes from './auth.routes.js';
+import listingsRoutes from './listings.routes.js';
+import brokersRoutes from './brokers.routes.js';
+import favoritesRoutes from './favorites.routes.js';
+import messagesRoutes from './messages.routes.js';
+import reviewsRoutes from './reviews.routes.js';
+import adminRoutes from './admin.routes.js';
+import paymentsRoutes from './payments.routes.js';
+import propertyInquiryRoutes from './propertyInquiry.routes.js';
+import comparisonCartRoutes from './comparisonCart.routes.js';
+import dashboardRoutes from './dashboard.routes.js';
+import uploadRoutes from './upload.routes.js';
+import { contactFormHandler, createViewingRequest } from '../controllers/misc.controller.js';
+import { authMiddleware } from '../middleware/auth.middleware.js';
 
 const router = Router();
 

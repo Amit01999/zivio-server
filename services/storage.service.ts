@@ -10,8 +10,8 @@ import {
   ViewingRequestModel,
   PropertyInquiryModel,
   ComparisonCartModel
-} from '../models';
-import type { IStorage } from '../storage';
+} from '../models/index.js';
+import type { IStorage } from '../storage.js';
 import type {
   User,
   SafeUser,
@@ -44,9 +44,9 @@ import type {
   Conversation,
   ConversationWithDetails
 } from '../types/schema.js';
-import { hashPassword, verifyPassword } from '../utils/password';
-import { generateSlug } from '../utils/slugify';
-import { deriveCategory, getCategoryFilters, type ListingCategory } from '../utils/categoryMapping';
+import { hashPassword, verifyPassword } from '../utils/password.js';
+import { generateSlug } from '../utils/slugify.js';
+import { deriveCategory, getCategoryFilters, type ListingCategory } from '../utils/categoryMapping.js';
 
 export class MongoStorageService implements IStorage {
   // Helper to transform MongoDB document to expected format

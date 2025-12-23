@@ -1,11 +1,11 @@
 import 'dotenv/config';
 import express from 'express';
 import { createServer } from 'http';
-import { connectDatabase } from './config/database';
-import apiRoutes from './routes';
-import { errorHandler } from './middleware/error.middleware';
-import { serveStatic } from './static';
-import { config } from './config/environment';
+import { connectDatabase } from './config/database.js';
+import apiRoutes from './routes/index.js';
+import { errorHandler } from './middleware/error.middleware.js';
+import { serveStatic } from './static.js';
+import { config } from './config/environment.js';
 
 const app = express();
 const httpServer = createServer(app);

@@ -5,14 +5,14 @@ import {
   getBrokerDashboard,
   getAdminDashboard,
   getListingAnalytics
-} from '../controllers/dashboard.controller';
+} from '../controllers/dashboard.controller.js';
 import {
   authMiddleware,
   requireBuyer,
   requireSeller,
   requireBroker,
   requireAdmin
-} from '../middleware/auth.middleware';
+} from '../middleware/auth.middleware.js';
 
 const router = Router();
 
