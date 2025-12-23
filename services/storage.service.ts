@@ -422,7 +422,7 @@ export class MongoStorageService implements IStorage {
     const conversationsWithDetails = await Promise.all(
       conversations.map(async (conv) => {
         const transformedConv = this.transformDoc<Conversation>(conv);
-        const otherParticipantId = transformedConv.participantIds.find(p => p !== userId);
+        const otherParticipantId = transformedConv.participantIds.find((p: string) => p !== userId);
         const otherUser = otherParticipantId
           ? await UserModel.findById(otherParticipantId).lean()
           : null;
@@ -721,7 +721,7 @@ export class MongoStorageService implements IStorage {
       throw new Error('Comparison cart not found');
     }
 
-    cart.listingIds = cart.listingIds.filter(id => id !== listingId);
+    cart.listingIds = cart.listingIds.filter((id: string) => id !== listingId);
     cart.updatedAt = new Date();
     await cart.save();
 

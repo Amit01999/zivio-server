@@ -44,8 +44,8 @@ export const getListingBySlug = asyncHandler(async (req: AuthRequest, res: Respo
     return res.status(404).json({ error: 'Listing not found' });
   }
 
-  if (listing.status === 'published') {
-    await storage.incrementListingViews(listing.id);
+  if ((listing as any).status === 'published') {
+    await storage.incrementListingViews((listing as any).id);
   }
 
   res.json(listing);

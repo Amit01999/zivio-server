@@ -33,7 +33,7 @@ export const getInquiryDetails = asyncHandler(async (req: AuthRequest, res: Resp
 
   // Check authorization: buyer can see their own, owner can see inquiries for their property, admin can see all
   const isAuthorized =
-    inquiry.buyerId === req.userId ||
+    (inquiry as any).buyerId === req.userId ||
     inquiry.property?.postedBy === req.userId ||
     req.user?.role === 'admin';
 
