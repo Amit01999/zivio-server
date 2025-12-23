@@ -65,32 +65,47 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
-  // Connect to MongoDB
-  await connectDatabase();
-
-  // API Routes
-  app.use('/api', apiRoutes);
-
-  // Error handler
-  app.use(errorHandler);
-
-  // In production, serve the built client files
-  // In development, the client runs separately on its own Vite dev server (port 5173)
-  // and proxies API requests to this server (port 5000)
-  if (config.nodeEnv === 'production') {
-    serveStatic(app);
-  } else {
-    log(
-      'Running in development mode - client should be started separately with: cd client && npx vite'
-    );
+// Initialize database connection
+let dbInitialized = false;
+async function initializeDatabase() {
+  if (!dbInitialized) {
+    await connectDatabase();
+    dbInitialized = true;
   }
+}
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  httpServer.listen(config.port, config.host, () => {
-    log(`serving on ${config.host}:${config.port}`);
-  });
-})();
+// Middleware to ensure database is connected before handling requests
+app.use(async (_req, res, next) => {
+  try {
+    await initializeDatabase();
+    next();
+  } catch (error) {
+    console.error('Database initialization error:', error);
+    res.status(500).json({ error: 'Database connection failed' });
+  }
+});
+
+// API Routes
+app.use('/api', apiRoutes);
+
+// Error handler
+app.use(errorHandler);
+
+// In production, serve the built client files
+if (config.nodeEnv === 'production') {
+  serveStatic(app);
+}
+
+// Export for Vercel serverless
+export default app;
+
+// Start server only in development (not on Vercel)
+if (process.env.VERCEL !== '1' && config.nodeEnv === 'development') {
+  (async () => {
+    await initializeDatabase();
+    httpServer.listen(config.port, config.host, () => {
+      log(`serving on ${config.host}:${config.port}`);
+      log('Running in development mode - client should be started separately with: cd client && npx vite');
+    });
+  })();
+}
