@@ -75,24 +75,22 @@ async function initializeDatabase() {
   }
 }
 
-// Cours
+// CORS configuration
 const allowedOrigins = [
-  'https://zivio-client.vercel.app/', // Your Vercel client URL
-  'https://zivio-client-git-main-bepros-projects.vercel.app/', // Custom domain if any
-  'http://localhost:5173', // Local development
+  'https://www.zivioliving.com',
+  'https://zivio-client.vercel.app',
+  'https://zivio-client-git-main-bepros-projects.vercel.app',
+  'http://localhost:5173',
 ];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, Postman, etc.)
       if (!origin) return callback(null, true);
-
       if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
+        return callback(null, true);
       }
+      callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
