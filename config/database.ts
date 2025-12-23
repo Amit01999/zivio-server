@@ -563,8 +563,10 @@ async function seedDatabase() {
     ];
 
     for (const listing of sampleListings) {
+      const { id, slug, priceType, createdAt, updatedAt, ...listingData } = listing as any;
       await ListingModel.create({
-        ...listing,
+        ...listingData,
+        listingType: priceType,
         slug: generateSlug(listing.title),
         views: 0,
         favorites: 0,

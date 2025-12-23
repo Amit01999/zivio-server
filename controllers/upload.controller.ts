@@ -10,7 +10,11 @@ const upload = multer({
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB limit per file
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (
+    req: Express.Request,
+    file: Express.Multer.File,
+    cb: multer.FileFilterCallback
+  ) => {
     // Accept only image files
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);

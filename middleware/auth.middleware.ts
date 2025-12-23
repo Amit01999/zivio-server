@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt, { type SignOptions } from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import { config } from '../config/environment';
 import { storage } from '../services/storage.service';
@@ -7,10 +7,13 @@ import type { SafeUser, UserRole } from '../types/schema';
 export interface AuthRequest extends Request {
   userId?: string;
   user?: SafeUser;
+  files?: Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[] };
+  file?: Express.Multer.File;
 }
 
 export function generateToken(userId: string): string {
-  return jwt.sign({ userId }, config.jwtSecret, { expiresIn: config.jwtExpiry });
+  const options: SignOptions = { expiresIn: config.jwtExpiry as any };
+  return jwt.sign({ userId }, config.jwtSecret, options);
 }
 
 export async function authMiddleware(

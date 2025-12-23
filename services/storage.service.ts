@@ -254,7 +254,7 @@ export class MongoStorageService implements IStorage {
         category: deriveCategory({
           listingType: listing.listingType as any,
           propertyType: listing.propertyType,
-          propertySubType: listing.propertySubType,
+          propertySubType: listing.propertySubType ?? undefined,
         })
       };
     });

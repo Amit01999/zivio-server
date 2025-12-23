@@ -1,7 +1,10 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import { ComparisonCart as ComparisonCartType } from '../types/schema.js';
 
-interface IComparisonCart extends Omit<ComparisonCartType, 'id' | 'createdAt' | 'updatedAt'>, Document {}
+interface IComparisonCart extends Omit<ComparisonCartType, 'id'>, Document {
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 const comparisonCartSchema = new Schema<IComparisonCart>(
   {

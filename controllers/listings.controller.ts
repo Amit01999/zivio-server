@@ -103,7 +103,7 @@ export const updateListing = asyncHandler(async (req: AuthRequest, res: Response
   }
 
   const updates = insertListingSchema.partial().parse(req.body);
-  const listing = await storage.updateListing(req.params.id, updates);
+  const listing = await storage.updateListing(req.params.id, updates as any);
 
   res.json(listing);
 });
