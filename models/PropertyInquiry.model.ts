@@ -25,6 +25,18 @@ const propertyInquirySchema = new Schema<IPropertyInquiry>(
         contactPhone: String
       },
       default: null
+    },
+    adminReply: { type: String, default: null },
+    adminReplyAt: { type: Date, default: null },
+    messages: {
+      type: [
+        {
+          senderRole: { type: String, enum: ['admin', 'buyer'], required: true },
+          text: { type: String, required: true },
+          sentAt: { type: Date, default: Date.now }
+        }
+      ],
+      default: []
     }
   },
   {

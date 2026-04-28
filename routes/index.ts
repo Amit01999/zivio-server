@@ -11,6 +11,7 @@ import propertyInquiryRoutes from './propertyInquiry.routes.js';
 import comparisonCartRoutes from './comparisonCart.routes.js';
 import dashboardRoutes from './dashboard.routes.js';
 import uploadRoutes from './upload.routes.js';
+import sellerMessagesRoutes from './sellerMessages.routes.js';
 import { contactFormHandler, createViewingRequest } from '../controllers/misc.controller.js';
 import { authMiddleware } from '../middleware/auth.middleware.js';
 
@@ -28,6 +29,7 @@ router.use('/property-inquiries', propertyInquiryRoutes);
 router.use('/comparison-cart', comparisonCartRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/upload', uploadRoutes);
+router.use('/seller-messages', sellerMessagesRoutes);
 
 router.post('/inquiries', contactFormHandler);
 router.post('/viewing-requests', authMiddleware, createViewingRequest);

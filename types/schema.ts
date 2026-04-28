@@ -499,6 +499,13 @@ export const propertyInquiries = pgTable('property_inquiries', {
     preferredTime?: string;
     contactPhone?: string;
   }>(),
+  adminReply: text('admin_reply'),
+  adminReplyAt: timestamp('admin_reply_at'),
+  messages: jsonb('messages').$type<Array<{
+    senderRole: 'admin' | 'buyer';
+    text: string;
+    sentAt: Date | string;
+  }>>(),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
@@ -507,6 +514,9 @@ export const insertPropertyInquirySchema = createInsertSchema(propertyInquiries)
   id: true,
   createdAt: true,
   updatedAt: true,
+  adminReply: true,
+  adminReplyAt: true,
+  messages: true,
 });
 
 export type InsertPropertyInquiry = z.infer<typeof insertPropertyInquirySchema>;

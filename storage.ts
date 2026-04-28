@@ -35,6 +35,7 @@ export interface IStorage {
   getListing(id: string): Promise<Listing | undefined>;
   getListingBySlug(slug: string): Promise<ListingWithBroker | undefined>;
   getListings(filters: SearchFilters): Promise<PaginatedResponse<Listing>>;
+  getAdminListings(filters: { status?: string; page?: number; limit?: number }): Promise<PaginatedResponse<Listing>>;
   getUserListings(userId: string): Promise<PaginatedResponse<Listing>>;
   createListing(data: InsertListing): Promise<Listing>;
   updateListing(id: string, updates: Partial<Listing>): Promise<Listing | undefined>;

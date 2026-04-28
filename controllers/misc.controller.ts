@@ -16,11 +16,18 @@ export const contactFormHandler = asyncHandler(async (req: Request, res: Respons
 });
 
 export const createViewingRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const data = insertViewingRequestSchema.parse(req.body);
+  const { listingId, preferredDate, preferredTime, message } = req.body;
+
+  if (!listingId || !preferredDate) {
+    return res.status(400).json({ error: 'listingId and preferredDate are required' });
+  }
 
   const request = await storage.createViewingRequest({
-    ...data,
-    userId: req.userId!
+    listingId,
+    userId: req.userId!,
+    preferredDate: new Date(preferredDate),
+    preferredTime: preferredTime || undefined,
+    message: message || undefined,
   });
 
   res.status(201).json(request);

@@ -34,7 +34,4 @@ const comparisonCartSchema = new Schema<IComparisonCart>(
   }
 );
 
-// Index on userId for fast lookups (unique ensures one cart per user)
-comparisonCartSchema.index({ userId: 1 });
-
 export const ComparisonCartModel = mongoose.model<IComparisonCart>('ComparisonCart', comparisonCartSchema);

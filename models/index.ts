@@ -9,3 +9,4 @@ export { TransactionModel } from './Transaction.model.js';
 export { ViewingRequestModel } from './ViewingRequest.model.js';
 export { PropertyInquiryModel } from './PropertyInquiry.model.js';
 export { ComparisonCartModel } from './ComparisonCart.model.js';
+export { AdminSellerMessageModel } from './AdminSellerMessage.model.js';

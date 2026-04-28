@@ -8,16 +8,24 @@ export const getStats = asyncHandler(async (req: AuthRequest, res: Response) => 
   res.json(stats);
 });
 
+export const getDashboard = asyncHandler(async (_req: AuthRequest, res: Response) => {
+  const data = await storage.getDashboardStats();
+  res.json(data);
+});
+
 export const getAllUsers = asyncHandler(async (req: AuthRequest, res: Response) => {
   const users = await storage.getUsers();
-  res.json(users);
+  const role = req.query.role as string | undefined;
+  const filtered = role ? users.filter((u: any) => u.role === role) : users;
+  res.json({ data: filtered });
 });
 
 export const getListings = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const status = req.query.status as any;
-  const filters = status ? { status } : {};
-
-  const result = await storage.getListings(filters as any);
+  const result = await storage.getAdminListings({
+    status: req.query.status as string | undefined,
+    page: req.query.page ? parseInt(req.query.page as string) : 1,
+    limit: req.query.limit ? parseInt(req.query.limit as string) : 20,
+  });
   res.json(result);
 });
 

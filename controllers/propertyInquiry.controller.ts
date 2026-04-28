@@ -90,6 +90,76 @@ export const getListingInquiries = asyncHandler(async (req: AuthRequest, res: Re
   res.json({ data: inquiries });
 });
 
+// Get all inquiries for a seller's own listings (seller/admin only)
+export const getSellerListingInquiries = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (req.user?.role !== 'seller' && req.user?.role !== 'admin') {
+    return res.status(403).json({ error: 'Seller access required' });
+  }
+
+  const listingsResult = await storage.getUserListings(req.userId!);
+  const listings = listingsResult.data ?? [];
+
+  if (listings.length === 0) {
+    return res.json({ data: [] });
+  }
+
+  // Build a lookup map so each inquiry can reference its parent listing
+  const listingMap = Object.fromEntries(listings.map((l: any) => [l.id, l]));
+
+  const inquiryArrays = await Promise.all(
+    listings.map((listing: any) => storage.getPropertyInquiriesByListing(listing.id))
+  );
+
+  const allInquiries = (inquiryArrays.flat() as any[])
+    .map((inquiry: any) => ({
+      ...inquiry,
+      property: listingMap[inquiry.propertyId] ?? inquiry.property,
+    }))
+    .sort(
+      (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
+
+  res.json({ data: allInquiries });
+});
+
+// Buyer reply to an admin message (buyer who owns the inquiry only)
+export const buyerReplyToInquiry = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { reply } = req.body;
+  if (!reply?.trim()) {
+    return res.status(400).json({ error: 'Reply message is required' });
+  }
+
+  try {
+    const updated = await storage.buyerReplyToInquiry(req.params.id, req.userId!, reply.trim());
+    res.json(updated);
+  } catch (err: any) {
+    if (err.message === 'Inquiry not found or access denied') {
+      return res.status(404).json({ error: err.message });
+    }
+    throw err;
+  }
+});
+
+// Admin reply to an inquiry (admin only)
+export const replyToInquiry = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+
+  const { reply } = req.body;
+  if (!reply?.trim()) {
+    return res.status(400).json({ error: 'Reply message is required' });
+  }
+
+  const inquiry = await storage.getPropertyInquiry(req.params.id);
+  if (!inquiry) {
+    return res.status(404).json({ error: 'Inquiry not found' });
+  }
+
+  const updated = await storage.replyToInquiry(req.params.id, reply.trim());
+  res.json(updated);
+});
+
 // Get all inquiries (admin only)
 export const getAllInquiries = asyncHandler(async (req: AuthRequest, res: Response) => {
   const filters = {

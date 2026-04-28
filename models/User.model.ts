@@ -15,7 +15,10 @@ const userSchema = new Schema<IUser>(
       default: 'buyer'
     },
     verified: { type: Boolean, default: false },
-    profilePhotoUrl: { type: String, default: null }
+    profilePhotoUrl: { type: String, default: null },
+    resetOtp: { type: String, default: null },
+    resetOtpExpiry: { type: Date, default: null },
+    resetOtpAttempts: { type: Number, default: 0 },
   },
   {
     timestamps: true,
@@ -31,7 +34,5 @@ const userSchema = new Schema<IUser>(
     }
   }
 );
-
-userSchema.index({ email: 1 });
 
 export const UserModel = mongoose.model<IUser>('User', userSchema);

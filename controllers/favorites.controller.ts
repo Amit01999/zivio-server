@@ -5,7 +5,13 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 
 export const getFavorites = asyncHandler(async (req: AuthRequest, res: Response) => {
   const favorites = await storage.getFavorites(req.userId!);
-  res.json(favorites);
+  res.json({ data: favorites });
+});
+
+export const checkFavorite = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { listingId } = req.params;
+  const isFavorited = await storage.isFavorited(req.userId!, listingId);
+  res.json({ isFavorited });
 });
 
 export const addFavorite = asyncHandler(async (req: AuthRequest, res: Response) => {

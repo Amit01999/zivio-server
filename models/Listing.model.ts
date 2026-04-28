@@ -173,7 +173,6 @@ listingSchema.pre('save', async function () {
 
 /* ================= INDEXES ================= */
 
-listingSchema.index({ slug: 1 });
 listingSchema.index({ city: 1 });
 listingSchema.index({ status: 1 });
 listingSchema.index({ postedBy: 1 });

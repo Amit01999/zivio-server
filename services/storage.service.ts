@@ -9,7 +9,8 @@ import {
   TransactionModel,
   ViewingRequestModel,
   PropertyInquiryModel,
-  ComparisonCartModel
+  ComparisonCartModel,
+  AdminSellerMessageModel
 } from '../models/index.js';
 import type { IStorage } from '../storage.js';
 import type {
@@ -268,6 +269,34 @@ export class MongoStorageService implements IStorage {
     };
   }
 
+  async getAdminListings(filters: {
+    status?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedResponse<Listing>> {
+    const query: any = {};
+    if (filters.status && filters.status !== 'all') {
+      query.status = filters.status;
+    }
+
+    const page = filters.page || 1;
+    const limit = filters.limit || 20;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      ListingModel.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      ListingModel.countDocuments(query)
+    ]);
+
+    return {
+      data: data.map(d => this.transformDoc<Listing>(d)),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    };
+  }
+
   async getUserListings(userId: string): Promise<PaginatedResponse<Listing>> {
     const data = await ListingModel.find({ postedBy: userId })
       .sort({ createdAt: -1 })
@@ -391,11 +420,18 @@ export class MongoStorageService implements IStorage {
   }
 
   async addFavorite(userId: string, listingId: string): Promise<Favorite> {
-    const favorite = await FavoriteModel.create({ userId, listingId });
-
-    await ListingModel.findByIdAndUpdate(listingId, { $inc: { favorites: 1 } });
-
-    return this.transformDoc<Favorite>(favorite);
+    try {
+      const favorite = await FavoriteModel.create({ userId, listingId });
+      await ListingModel.findByIdAndUpdate(listingId, { $inc: { favorites: 1 } });
+      return this.transformDoc<Favorite>(favorite);
+    } catch (err: any) {
+      // Duplicate key — already favorited, return the existing record
+      if (err.code === 11000) {
+        const existing = await FavoriteModel.findOne({ userId, listingId }).lean();
+        return this.transformDoc<Favorite>(existing);
+      }
+      throw err;
+    }
   }
 
   async removeFavorite(userId: string, listingId: string): Promise<boolean> {
@@ -605,6 +641,35 @@ export class MongoStorageService implements IStorage {
     );
 
     return inquiriesWithDetails;
+  }
+
+  async replyToInquiry(id: string, reply: string): Promise<PropertyInquiry> {
+    const now = new Date();
+    const inquiry = await PropertyInquiryModel.findByIdAndUpdate(
+      id,
+      {
+        adminReply: reply,
+        adminReplyAt: now,
+        status: 'contacted',
+        $push: { messages: { senderRole: 'admin', text: reply, sentAt: now } }
+      },
+      { new: true }
+    ).lean();
+    if (!inquiry) throw new Error('Inquiry not found');
+    return this.transformDoc<PropertyInquiry>(inquiry);
+  }
+
+  async buyerReplyToInquiry(id: string, buyerId: string, reply: string): Promise<PropertyInquiry> {
+    const inquiry = await PropertyInquiryModel.findOne({ _id: id, buyerId }).lean();
+    if (!inquiry) throw new Error('Inquiry not found or access denied');
+
+    const updated = await PropertyInquiryModel.findByIdAndUpdate(
+      id,
+      { $push: { messages: { senderRole: 'buyer', text: reply, sentAt: new Date() } } },
+      { new: true }
+    ).lean();
+    if (!updated) throw new Error('Inquiry not found');
+    return this.transformDoc<PropertyInquiry>(updated);
   }
 
   async getAllPropertyInquiries(filters?: {
@@ -874,6 +939,345 @@ export class MongoStorageService implements IStorage {
       inquiries: inquiriesCount,
       favorites: favoritesCount
     };
+  }
+
+  // ==================== ADMIN → SELLER MESSAGE METHODS ====================
+
+  async sendAdminSellerMessage(data: {
+    adminId: string;
+    sellerId: string;
+    propertyId: string;
+    message: string;
+    relatedInquiryId?: string;
+  }): Promise<any> {
+    const msg = await AdminSellerMessageModel.create(data);
+    return this.transformDoc(msg);
+  }
+
+  async getSellerMessages(sellerId: string): Promise<any[]> {
+    const messages = await AdminSellerMessageModel.find({ sellerId })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return Promise.all(
+      messages.map(async (msg) => {
+        const transformed = this.transformDoc<any>(msg);
+        const property = await ListingModel.findById(transformed.propertyId).lean();
+        return {
+          ...transformed,
+          property: property ? this.transformDoc<any>(property) : undefined,
+        };
+      })
+    );
+  }
+
+  async getAdminSentMessages(adminId: string): Promise<any[]> {
+    const messages = await AdminSellerMessageModel.find({ adminId })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return Promise.all(
+      messages.map(async (msg) => {
+        const transformed = this.transformDoc<any>(msg);
+        const [property, seller] = await Promise.all([
+          ListingModel.findById(transformed.propertyId).lean(),
+          UserModel.findById(transformed.sellerId).lean(),
+        ]);
+        return {
+          ...transformed,
+          property: property ? this.transformDoc<any>(property) : undefined,
+          seller: seller ? this.toSafeUser(seller) : undefined,
+        };
+      })
+    );
+  }
+
+  async markSellerMessageRead(id: string, sellerId: string): Promise<any> {
+    const msg = await AdminSellerMessageModel.findOneAndUpdate(
+      { _id: id, sellerId },
+      { read: true },
+      { new: true }
+    ).lean();
+    return msg ? this.transformDoc<any>(msg) : null;
+  }
+
+  async getDashboardStats(): Promise<any> {
+    const [
+      usersByRole,
+      listingsByStatus,
+      inquiriesByStatus,
+      recentListingsRaw,
+      recentInquiriesRaw,
+      recentUsersRaw,
+      topByViewsRaw,
+      transactionsRaw,
+    ] = await Promise.all([
+      UserModel.aggregate([{ $group: { _id: '$role', count: { $sum: 1 } } }]),
+      ListingModel.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
+      PropertyInquiryModel.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
+      ListingModel.find()
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .select('title city status propertyType images createdAt price views postedBy')
+        .lean(),
+      PropertyInquiryModel.find()
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .select('requestType status buyerId propertyId createdAt')
+        .lean(),
+      UserModel.find()
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .select('name email role createdAt profilePhotoUrl')
+        .lean(),
+      ListingModel.find({ status: 'published' })
+        .sort({ views: -1 })
+        .limit(5)
+        .select('title city views images slug')
+        .lean(),
+      TransactionModel.find({ status: 'completed' }).select('amount').lean(),
+    ]);
+
+    const userMap: Record<string, number> = {};
+    for (const r of usersByRole) userMap[r._id as string] = r.count;
+
+    const listingMap: Record<string, number> = {};
+    for (const r of listingsByStatus) listingMap[r._id as string] = r.count;
+
+    const inquiryMap: Record<string, number> = {};
+    for (const r of inquiriesByStatus) inquiryMap[r._id as string] = r.count;
+
+    // Top listings by inquiry count
+    const topByInquiriesAgg = await PropertyInquiryModel.aggregate([
+      { $group: { _id: '$propertyId', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 5 },
+    ]);
+    const topByInquiries = (
+      await Promise.all(
+        topByInquiriesAgg.map(async (item) => {
+          const l = await ListingModel.findById(item._id)
+            .select('title city images slug')
+            .lean();
+          return l ? { ...this.transformDoc<any>(l), inquiryCount: item.count } : null;
+        })
+      )
+    ).filter(Boolean);
+
+    // Seller performance (top 5 by listing count)
+    const sellers = await UserModel.find({ role: 'seller' })
+      .select('name email profilePhotoUrl')
+      .lean();
+    const sellerPerf = (
+      await Promise.all(
+        sellers.map(async (seller) => {
+          const sid = seller._id.toString();
+          const listingIds = (
+            await ListingModel.find({ postedBy: sid }).select('_id').lean()
+          ).map((l) => l._id.toString());
+          const [totalListings, totalInquiries] = await Promise.all([
+            listingIds.length,
+            PropertyInquiryModel.countDocuments({ propertyId: { $in: listingIds } }),
+          ]);
+          return {
+            id: sid,
+            name: (seller as any).name,
+            email: (seller as any).email,
+            profilePhotoUrl: (seller as any).profilePhotoUrl ?? null,
+            totalListings,
+            totalInquiries,
+          };
+        })
+      )
+    )
+      .sort((a, b) => b.totalListings - a.totalListings)
+      .slice(0, 5);
+
+    // Populate recent inquiries
+    const recentInquiries = await Promise.all(
+      recentInquiriesRaw.map(async (inq) => {
+        const [buyer, property] = await Promise.all([
+          UserModel.findById(inq.buyerId).select('name').lean(),
+          ListingModel.findById(inq.propertyId).select('title city').lean(),
+        ]);
+        return {
+          ...this.transformDoc<any>(inq),
+          buyerName: (buyer as any)?.name ?? 'Unknown',
+          propertyTitle: (property as any)?.title ?? 'Unknown Property',
+          propertyCity: (property as any)?.city ?? '',
+        };
+      })
+    );
+
+    const revenue = transactionsRaw.reduce((s, t) => s + ((t as any).amount ?? 0), 0);
+
+    return {
+      users: {
+        total: Object.values(userMap).reduce((s, c) => s + c, 0),
+        buyers: userMap['buyer'] ?? 0,
+        sellers: userMap['seller'] ?? 0,
+        admins: userMap['admin'] ?? 0,
+      },
+      listings: {
+        total: Object.values(listingMap).reduce((s, c) => s + c, 0),
+        published: listingMap['published'] ?? 0,
+        pending: listingMap['pending'] ?? 0,
+        rejected: listingMap['rejected'] ?? 0,
+        sold: listingMap['sold'] ?? 0,
+        rented: listingMap['rented'] ?? 0,
+      },
+      inquiries: {
+        total: Object.values(inquiryMap).reduce((s, c) => s + c, 0),
+        new: inquiryMap['new'] ?? 0,
+        contacted: inquiryMap['contacted'] ?? 0,
+        closed: inquiryMap['closed'] ?? 0,
+      },
+      revenue,
+      recentListings: recentListingsRaw.map((l) => this.transformDoc<any>(l)),
+      recentInquiries,
+      recentUsers: recentUsersRaw.map((u) => this.toSafeUser(u as any)),
+      topListingsByViews: topByViewsRaw.map((l) => this.transformDoc<any>(l)),
+      topListingsByInquiries: topByInquiries,
+      sellerPerformance: sellerPerf,
+    };
+  }
+
+  async getSellerListWithStats(): Promise<any[]> {
+    const sellers = await UserModel.find({ role: 'seller' }).lean();
+
+    return Promise.all(
+      sellers.map(async (seller) => {
+        const safeUser = this.toSafeUser(seller);
+        const listingIds = await ListingModel.find({ postedBy: safeUser.id })
+          .select('_id status')
+          .lean();
+
+        const ids = listingIds.map((l) => l._id.toString());
+        const [activeCount, inquiryCount, unreadMessages] = await Promise.all([
+          listingIds.filter((l) => l.status === 'published').length,
+          PropertyInquiryModel.countDocuments({ propertyId: { $in: ids } }),
+          AdminSellerMessageModel.countDocuments({ sellerId: safeUser.id, read: false }),
+        ]);
+
+        return {
+          ...safeUser,
+          totalListings: listingIds.length,
+          activeListings: activeCount,
+          totalInquiries: inquiryCount,
+          unreadMessages,
+        };
+      })
+    );
+  }
+
+  async getSellerFullProfile(sellerId: string): Promise<any | null> {
+    const seller = await UserModel.findById(sellerId).lean();
+    if (!seller) return null;
+
+    const listings = await ListingModel.find({ postedBy: sellerId }).lean();
+    const listingIds = listings.map((l) => l._id.toString());
+
+    const inquiryCounts = await Promise.all(
+      listingIds.map(async (id) => ({
+        id,
+        count: await PropertyInquiryModel.countDocuments({ propertyId: id }),
+      }))
+    );
+    const inquiryMap: Record<string, number> = {};
+    for (const ic of inquiryCounts) inquiryMap[ic.id] = ic.count;
+
+    const totalInquiries = Object.values(inquiryMap).reduce((s, c) => s + c, 0);
+    const unreadMessages = await AdminSellerMessageModel.countDocuments({ sellerId, read: false });
+
+    return {
+      ...this.toSafeUser(seller),
+      totalListings: listings.length,
+      activeListings: listings.filter((l) => l.status === 'published').length,
+      totalInquiries,
+      unreadMessages,
+      listings: listings.map((l) => ({
+        ...this.transformDoc<any>(l),
+        inquiryCount: inquiryMap[l._id.toString()] ?? 0,
+      })),
+    };
+  }
+
+  async getSellerConversationsForAdmin(sellerId: string): Promise<any[]> {
+    const messages = await AdminSellerMessageModel.find({ sellerId })
+      .sort({ createdAt: 1 })
+      .lean();
+
+    return Promise.all(
+      messages.map(async (msg) => {
+        const transformed = this.transformDoc<any>(msg);
+        const property = await ListingModel.findById(transformed.propertyId).lean();
+        return {
+          ...transformed,
+          property: property ? this.transformDoc<any>(property) : undefined,
+        };
+      })
+    );
+  }
+
+  async addAdminThreadReply(messageId: string, adminId: string, text: string): Promise<any | null> {
+    const msg = await AdminSellerMessageModel.findByIdAndUpdate(
+      messageId,
+      {
+        $push: {
+          thread: { senderRole: 'admin', senderId: adminId, text, sentAt: new Date() },
+        },
+      },
+      { new: true }
+    ).lean();
+    return msg ? this.transformDoc<any>(msg) : null;
+  }
+
+  async addSellerThreadReply(messageId: string, sellerId: string, text: string): Promise<any | null> {
+    const msg = await AdminSellerMessageModel.findOneAndUpdate(
+      { _id: messageId, sellerId },
+      {
+        read: true,
+        $push: {
+          thread: { senderRole: 'seller', senderId: sellerId, text, sentAt: new Date() },
+        },
+      },
+      { new: true }
+    ).lean();
+    return msg ? this.transformDoc<any>(msg) : null;
+  }
+
+  // ==================== OTP / PASSWORD RESET ====================
+
+  async setUserResetOtp(email: string, otpHash: string, expiry: Date): Promise<boolean> {
+    const result = await UserModel.updateOne(
+      { email: email.toLowerCase() },
+      { resetOtp: otpHash, resetOtpExpiry: expiry, resetOtpAttempts: 0 }
+    );
+    return result.matchedCount > 0;
+  }
+
+  async getUserByEmailWithOtp(email: string): Promise<any | null> {
+    return UserModel.findOne({ email: email.toLowerCase() })
+      .select('+resetOtp +resetOtpExpiry +resetOtpAttempts')
+      .lean();
+  }
+
+  async incrementOtpAttempts(userId: string): Promise<void> {
+    await UserModel.updateOne({ _id: userId }, { $inc: { resetOtpAttempts: 1 } });
+  }
+
+  async clearUserResetOtp(userId: string): Promise<void> {
+    await UserModel.updateOne(
+      { _id: userId },
+      { resetOtp: null, resetOtpExpiry: null, resetOtpAttempts: 0 }
+    );
+  }
+
+  async updateUserPassword(userId: string, passwordHash: string): Promise<void> {
+    await UserModel.updateOne(
+      { _id: userId },
+      { passwordHash, resetOtp: null, resetOtpExpiry: null, resetOtpAttempts: 0 }
+    );
   }
 }
 

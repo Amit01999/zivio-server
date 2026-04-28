@@ -1,5 +1,13 @@
 import { Router } from 'express';
 import * as adminController from '../controllers/admin.controller.js';
+import {
+  sendSellerMessage,
+  getAdminSentMessages,
+  getSellerListWithStats,
+  addAdminThreadReply,
+  getSellerDetails,
+  getSellerConversations,
+} from '../controllers/adminSellerMessage.controller.js';
 import { authMiddleware } from '../middleware/auth.middleware.js';
 import { adminMiddleware } from '../middleware/admin.middleware.js';
 
@@ -9,6 +17,7 @@ router.use(authMiddleware);
 router.use(adminMiddleware);
 
 router.get('/stats', adminController.getStats);
+router.get('/dashboard', adminController.getDashboard);
 router.get('/users', adminController.getAllUsers);
 router.patch('/users/:id', adminController.updateUser);
 router.delete('/users/:id', adminController.deleteUser);
@@ -22,5 +31,13 @@ router.delete('/listings/:id', adminController.deleteListing);
 router.get('/brokers', adminController.getBrokers);
 router.post('/brokers/:id/verify', adminController.verifyBroker);
 router.get('/inquiries', adminController.getAllInquiries);
+
+// Admin → Seller messaging
+router.get('/sellers/stats', getSellerListWithStats);
+router.get('/sellers/:sellerId/details', getSellerDetails);
+router.get('/sellers/:sellerId/conversations', getSellerConversations);
+router.post('/seller-messages', sendSellerMessage);
+router.post('/seller-messages/:id/reply', addAdminThreadReply);
+router.get('/seller-messages', getAdminSentMessages);
 
 export default router;
