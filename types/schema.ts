@@ -231,14 +231,14 @@ export const listings = pgTable('listings', {
   title: text('title').notNull(),
   slug: text('slug').notNull().unique(),
 
-  price: text('price').notNull(), // Supports both numeric and text values (e.g., "Contact for Price")
+  price: text('price'), // Supports both numeric and text values (e.g., "Contact for Price")
   listingType: text('listing_type').$type<ListingType>().notNull(),
   pricePerSqft: integer('price_per_sqft'),
 
   propertyType: text('property_type').$type<PropertyType>().notNull(),
   propertySubType: text('property_sub_type'),
 
-  address: text('address').notNull(),
+  address: text('address'),
   city: text('city').notNull(),
   postedBy: varchar('posted_by', { length: 36 }).notNull(),
 
@@ -331,13 +331,20 @@ export const insertListingSchema = createInsertSchema(listings)
   })
   .extend({
     // Override price to accept both number and string
-    price: z.union([
-      z.number().min(1, 'Price must be greater than 0'),
-      z.string().min(1, 'Price is required')
-    ]).transform((val) => {
+    price: z.preprocess(
+      val => val === '' || val === null ? undefined : val,
+      z.union([
+        z.number().min(1, 'Price must be greater than 0'),
+        z.string().min(1, 'Price is required')
+      ]).optional()
+    ).transform((val) => {
       // Convert numbers to strings for database storage
       return typeof val === 'number' ? val.toString() : val;
     }),
+    address: z.preprocess(
+      val => val === '' || val === null ? undefined : val,
+      z.string().min(5, 'Address must be at least 5 characters').optional()
+    ),
   });
 
 export type InsertListing = z.infer<typeof insertListingSchema>;
@@ -649,10 +656,13 @@ export const listingFormSchema = z.object({
   description: z.string().min(50, 'Description must be at least 50 characters').optional(),
 
   // Pricing
-  price: z.union([
-    z.number().min(1, 'Price must be greater than 0'),
-    z.string().min(1, 'Price is required')
-  ]),
+  price: z.preprocess(
+    val => val === '' || val === null ? undefined : val,
+    z.union([
+      z.number().min(1, 'Price must be greater than 0'),
+      z.string().min(1, 'Price is required')
+    ]).optional()
+  ),
   pricePerSqft: z.number().optional(),
   negotiable: z.boolean().optional(),
 
@@ -681,7 +691,10 @@ export const listingFormSchema = z.object({
   liftAvailable: z.boolean().optional(),
 
   // Location
-  address: z.string().min(5, 'Address is required'),
+  address: z.preprocess(
+    val => val === '' || val === null ? undefined : val,
+    z.string().min(5, 'Address must be at least 5 characters').optional()
+  ),
   city: z.string().min(1, 'City is required'),
   district: z.string().optional(),
   area: z.string().optional(),

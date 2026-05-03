@@ -11,8 +11,7 @@ import {
 import { deriveCategory } from '../utils/categoryMapping.js';
 
 interface IListing
-  extends Omit<ListingType, 'id' | 'createdAt' | 'updatedAt'>,
-    Document {}
+  extends Omit<ListingType, 'id' | 'createdAt' | 'updatedAt'>, Document {}
 
 const listingSchema = new Schema<IListing>(
   {
@@ -21,7 +20,7 @@ const listingSchema = new Schema<IListing>(
     title: { type: String, required: true },
     slug: { type: String, required: true, unique: true },
 
-    price: { type: Schema.Types.Mixed, required: true }, // Supports both number and string (e.g., "Contact for Price")
+    price: { type: Schema.Types.Mixed }, // Supports both number and string (e.g., "Contact for Price")
     pricePerSqft: { type: Number },
 
     listingType: {
@@ -38,7 +37,7 @@ const listingSchema = new Schema<IListing>(
 
     propertySubType: { type: String },
 
-    address: { type: String, required: true },
+    address: { type: String },
     city: { type: String, required: true },
     postedBy: { type: String },
 
@@ -144,7 +143,7 @@ const listingSchema = new Schema<IListing>(
         return ret;
       },
     },
-  }
+  },
 );
 
 /* ================= VIRTUAL FIELDS ================= */
@@ -162,8 +161,9 @@ listingSchema.virtual('category').get(function () {
 
 // Auto-compute pricePerSqft before saving (only for numeric prices)
 listingSchema.pre('save', async function () {
-  if (this.areaSqFt && this.areaSqFt > 0 && !this.pricePerSqft) {
-    const numericPrice = typeof this.price === 'string' ? parseFloat(this.price) : this.price;
+  if (this.price != null && this.areaSqFt && this.areaSqFt > 0 && !this.pricePerSqft) {
+    const numericPrice =
+      typeof this.price === 'string' ? parseFloat(this.price) : this.price;
     if (!isNaN(numericPrice)) {
       this.pricePerSqft = Math.round(numericPrice / this.areaSqFt);
     }

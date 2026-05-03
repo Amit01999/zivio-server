@@ -315,7 +315,7 @@ export class MongoStorageService implements IStorage {
   async createListing(data: InsertListing): Promise<Listing> {
     // Auto-compute pricePerSqft if not provided (only for numeric prices)
     let pricePerSqft = data.pricePerSqft;
-    if (!pricePerSqft && data.areaSqFt && data.areaSqFt > 0) {
+    if (!pricePerSqft && data.price !== undefined && data.price !== null && data.areaSqFt && data.areaSqFt > 0) {
       const numericPrice = typeof data.price === 'string' ? parseFloat(data.price) : data.price;
       if (!isNaN(numericPrice)) {
         pricePerSqft = Math.round(numericPrice / data.areaSqFt);
